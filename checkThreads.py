@@ -1,6 +1,6 @@
-#created by Peter Olson
-#tool to quickly monitor threads on an entire installation
-#used by calling file and passing it the name of one of it's nodes, and the number of nodes that that installation has.
+# created by Peter Olson
+# tool to quickly monitor threads on an entire installation
+# used by calling file and passing it the name of one of it's nodes, and the number of nodes that that installation has.
 
 import sys, os, subprocess, time
 

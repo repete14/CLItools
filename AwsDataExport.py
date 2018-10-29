@@ -4,57 +4,61 @@
 # 10/25/18
 
 # -*- coding: utf-8 -*-
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import os
 import subprocess
 
-def dataExport():
 
+def data_export():
     # get input data to perform operation
-    installationName = input("Installation/file name (i.e. jive-noc-jcx): ")
-    namespaceName = input("Namespace (i.e. jcx-inst-4lwsszavbrnnszco5xtghv): ")
+    installation_name = input("Installation/file name (i.e. jive-noc-jcx): ")
+    namespace_name = input("Namespace (i.e. jcx-inst-4lwsszavbrnnszco5xtghv): ")
     context = input("Context (eu or us): ")
-    # namespaceName = "jcx-inst-4lwsszavbrnnszco5xtghv"
-    # context = "us"
-    # installationName = "jive-noc-jcx"
+
+    if installation_name == "test":
+        namespace_name = "jcx-inst-4lwsszavbrnnszco5xtghv"
+        context = "us"
+        installation_name = "jive-noc-jcx"
 
     if context == "eu":
         context = "jcx-prod-eu"
-        bastionHost = "bastion-eu-central-1-jive-microservices-prod.infra.jivehosted.com"
+        bastion_host = "bastion-eu-central-1-jive-microservices-prod.infra.jivehosted.com"
     elif context == "us":
         context = "jcx-prod-us-east"
-        bastionHost = "bastion-us-east-1-jive-microservices-prod.infra.jivehosted.com"
+        bastion_host = "bastion-us-east-1-jive-microservices-prod.infra.jivehosted.com"
     else:
         context = input("you must choose either eu or us: ")
         exit()
 
-    #get the name of a pod
-    execCommand = "kubectl get pods --context=" + context + " -n " + namespaceName + " | awk '{print $1}'"
-    podName = str(subprocess.check_output(execCommand,shell=True).decode('utf-8')).split()[1]
-    print("getting db details from pod: " + podName)
+    # get the name of a pod
+    exec_command = "kubectl get pods --context=" + context + " -n " + namespace_name + " | awk '{print $1}'"
+    pod_name = str(subprocess.check_output(exec_command, shell=True).decode('utf-8')).split()[1]
+    print("getting db details from pod: " + pod_name)
 
     # setup the base command used for all future commands
-    execPrefix = "kubectl exec -c webapp --context=" + context + " -n " + namespaceName + " -it " + podName + ' -- bash -c "'
-    execCommand = ''
-    execSuffix = '"'
+    exec_prefix = "kubectl exec -c webapp --context=" + context + " -n " + namespace_name \
+                  + " -it " + pod_name + ' -- bash -c "'
+    exec_command = ''
+    exec_suffix = '"'
 
-    #get database details
-    execCommand = "cd /secrets/jive/db/app/;cat password"
-    dbpass = str(subprocess.check_output(execPrefix + execCommand + execSuffix, shell=True).decode('utf-8')).strip()
+    # get database details
+    exec_command = "cd /secrets/jive/db/app/;cat password"
+    db_pass = str(subprocess.check_output(exec_prefix + exec_command + exec_suffix, shell=True).decode('utf-8')).strip()
 
-    execCommand = "cd /secrets/jive/db/app/;cat dbname"
-    dbname = str(subprocess.check_output(execPrefix + execCommand + execSuffix, shell=True).decode('utf-8')).strip()
+    exec_command = "cd /secrets/jive/db/app/;cat dbname"
+    db_name = str(subprocess.check_output(exec_prefix + exec_command + exec_suffix, shell=True).decode('utf-8')).strip()
 
-    execCommand = "cd /secrets/jive/db/app/;cat host"
-    dbhost = str(subprocess.check_output(execPrefix + execCommand + execSuffix, shell=True).decode('utf-8')).strip()
+    exec_command = "cd /secrets/jive/db/app/;cat host"
+    db_host = str(subprocess.check_output(exec_prefix + exec_command + exec_suffix, shell=True).decode('utf-8')).strip()
 
-    pdDumpCommand = "pg_dump -v -Fc -O -U " + dbname + " -h " + dbhost + " -f " + installationName + ".dmp " + dbname
-    print("use the following to log in: " + dbpass)
+    dump_command = "pg_dump -v -Fc -O -U " + db_name + " -h " + db_host + " -f " + installation_name + ".dmp " + db_name
+    print("use the following to log in: " + db_pass)
 
     # SSH to bastion, and create a .dmp file in your home directory
-    execCommand = "ssh " + bastionHost + " '" + pdDumpCommand + "'"
-    os.system(execCommand)
-    print("creation of " + installationName + ".dmp on " + bastionHost + ":~/")
+    exec_command = "ssh " + bastion_host + " '" + dump_command + "'"
+    os.system(exec_command)
+    print("creation of " + installation_name + ".dmp on " + bastion_host + ":~/")
 
-dataExport()
+
+data_export()
