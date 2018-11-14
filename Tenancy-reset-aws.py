@@ -1,10 +1,10 @@
 # script created to complete data export for data dump
 # Created by Peter Olson
-# Version: 0.1.0
+# Version: 0.2.0
 # 10/25/18
 
 # -*- coding: utf-8 -*-
-# !/usr/bin/env python
+# !/usr/bin/env python3
 
 import os
 import subprocess
@@ -14,6 +14,7 @@ import requests
 def tenancy_reset():
     # get input data to perform operation
     namespace_name = input("Namespace (i.e. jcx-inst-rd19ys5fnopufncxqvxwqg): ")
+    tenant_id = input("Tenant ID (i.e. 062a3052-5398-4b86-a302-3fd28e68be30): ")
     region = input("Context (eu or us): ")
 
     if namespace_name == "test":
@@ -30,12 +31,16 @@ def tenancy_reset():
         context = "jcx-prod-us-east"
         datacenter = "phx"
     else:
-        region = input("you must choose either eu or us: ")
+        print("you must choose either eu or us")
         exit()
 
     # get the name of a pod
-    exec_command = "kubectl get pods --context=" + context + " -n " + namespace_name + " | awk '{print $1}'"
-    pod_name = str(subprocess.check_output(exec_command, shell=True).decode('utf-8')).split()[1]
+    exec_command = "kubectl get pods --context=" + context + " -n " + namespace_name + " | awk '{print $1}' | grep webapp"
+    pod_name = str(subprocess.check_output(exec_command, shell=True).decode('utf-8')).split()[0]
+    if pod_name[0] != 'w':
+        print(str(subprocess.check_output(exec_command, shell=True).decode('utf-8')))
+        print("webapp could not be found: exiting")
+        exit()
     print("getting db details from pod: " + pod_name)
 
     # setup the base command used for all future commands
@@ -71,11 +76,10 @@ def tenancy_reset():
     exec_command = ("psql --host " + db_host + " --port=" + db_port + " --username=" + db_username + " --dbname=" + db_name)
     os.system(exec_prefix + exec_command + exec_suffix)
 
-    tenancy_secrets_purge(datacenter)
+    tenancy_secrets_purge(datacenter, tenant_id)
 
 
-def tenancy_secrets_purge(datacenter):
-    tenant_id = input("Tenant ID (i.e. 062a3052-5398-4b86-a302-3fd28e68be30): ")
+def tenancy_secrets_purge(datacenter, tenant_id):
 
     services = str("activityIngress mitui-video-playback antivirus mitui-videos baas-s3-broker mitui-videos-aws "
                    "cloudnotification office365 content-translation phrase-substitution contentTranslation "
@@ -97,9 +101,7 @@ def tenancy_secrets_purge(datacenter):
                    "mitui-userpanel video-status-perceptive mitui-userpanel-aws video-upload-perceptive "
                    "mitui-video-browse zenx mitui-video-create").split(" ")
     for service in services:
-        # print("Resetting secrets for tenantID " + tenant_id + " service " + service)
         for i in ("1","2","3"):
-            # os.system("curl -s -H 'Content-Type: application/json' -d '{"customerSecretRequest":{"serviceName":"'${service}'", "systemId":"'${tenantId}'"},"instanceType":""}')
 
             headers = {
                 'Content-Type': 'application/json',
