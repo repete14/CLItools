@@ -1,9 +1,10 @@
 # CLItools
 collection of Jive tools
 
-TENANCY RESET SCRIPT: tenancy-rest-aws.py
+##TENANCY RESET SCRIPT: 
+######tenancy-rest-aws.py
 
-Prequisites:
+Prerequisites:
 1) Python 3
 2) Requests package
    -install with: "python3 -m pip install requests"
@@ -17,8 +18,8 @@ To use:
     b) tenantID/Jive instance ID
     c) the region (either 'us' or 'eu')
 3) Details for the login credentials, and command to be used will be printed out. 
-    a) enter the passoword when prompted
+    a) enter the password when prompted
     b) then when at the psql prompt, enter the command given
     c) enter "\q" to quit psql prompt, and continue
-4) Script will procede to purging of tenancy data from host, monitor for success.
+4) Script will proceed to purging of tenancy data from host, monitor for success.
 5) Done!
