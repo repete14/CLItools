@@ -1,6 +1,6 @@
 # Script created to login to an aws site's db to perform queries
 # Created by Peter Olson
-# Version: 0.1.0
+# Version: 0.2.0
 # 10/25/18
 
 # -*- coding: utf-8 -*-
@@ -30,8 +30,12 @@ def awsDbLogin():
         exit()
 
     # get the name of a pod
-    exec_command = "kubectl get pods --context=" + context + " -n " + namespace_name + " | awk '{print $1}'"
-    pod_name = str(subprocess.check_output(exec_command, shell=True).decode('utf-8')).split()[1]
+    exec_command = "kubectl get pods --context=" + context + " -n " + namespace_name + " | awk '{print $1}' | grep webapp"
+    pod_name = str(subprocess.check_output(exec_command, shell=True).decode('utf-8')).split()[0]
+    if pod_name[0] != 'w':
+        print(str(subprocess.check_output(exec_command, shell=True).decode('utf-8')))
+        print("webapp could not be found: exiting")
+        exit()
     print("getting db details from pod: " + pod_name)
 
     # setup the base command used for all future commands
