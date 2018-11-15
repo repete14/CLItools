@@ -1,7 +1,7 @@
 # Script created to login to an aws site's db to perform queries
 # Created by Peter Olson
 # Version: 0.2.0
-# 10/25/18
+# 11/14/18
 
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python

@@ -1,7 +1,7 @@
 # script created to complete data export for data dump
 # Created by Peter Olson
 # Version: 0.1.0
-# 10/25/18
+# 11/14/18
 
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
