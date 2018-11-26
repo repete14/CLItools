@@ -70,7 +70,7 @@ def data_export():
     # setting up some base file settings
     db_dump_filename = installation_name + "-DB.dmp"
     binstore_dump_filename = installation_name + "-binstore.tar.gz"
-    bastion_home_dir = ":~/"
+    bastion_home_dir = "~/"
     binstore_user_dir = "/sftp/" + username + "/"
     binstore_temp_dir = binstore_user_dir + customer_sftp_account + "/"
     binstore_customer_dir = "/sftp/jail/" + customer_sftp_account + "/storage/"
@@ -93,11 +93,11 @@ def data_export():
     # SSH to bastion, and create a .dmp file in user's home directory
     command = bastion_prefix + command + command_suffix
     os.system(command)
-    print("creation of " + db_dump_filename + " on " + bastion_host + bastion_home_dir)
+    print("creation of " + db_dump_filename + " on " + bastion_host + ":" + bastion_home_dir)
 
     # move files from bastion to user's sftp home directory
     print("----- Moving Db dump to sftp server -----")
-    source_file = bastion_host + bastion_home_dir + db_dump_filename
+    source_file = bastion_host + bastion_home_dir + ":" + db_dump_filename
     destination_file = binstore_user_dir + db_dump_filename
     command = binstore_prefix + "scp " + username + "@" + source_file + " " + destination_file + command_suffix
     os.system(command)
@@ -121,10 +121,15 @@ def data_export():
     destination_file = binstore_customer_dir + binstore_dump_filename
     command = binstore_prefix_su + "mv " + source_file + " " + destination_file + command_suffix
     os.system(command)
+
+    # cleaning up leftover files
+    print("----- cleaning up leftover files and folders -----")
     command = binstore_prefix + "rm -rf " + binstore_temp_dir + command_suffix
     os.system(command)
-    command = bastion_prefix + "sudo rm " + bastion_home_dir + db_dump_filename + command_suffix
+    command = bastion_prefix + "rm " + bastion_home_dir + db_dump_filename + command_suffix
     os.system(command)
+
+    print("----- PROCESS COMPLETE! -----")
 
 
 data_export()
