@@ -122,12 +122,8 @@ def data_export():
     command = binstore_prefix_su + "mv " + source_file + " " + destination_file + command_suffix
     os.system(command)
     command = binstore_prefix + "rm -rf " + binstore_temp_dir + command_suffix
-    print(command)
-    if(input("does that look right? ")) == "n": exit()
     os.system(command)
     command = bastion_prefix + "sudo rm " + bastion_home_dir + db_dump_filename + command_suffix
-    print(command)
-    if(input("does that look right? ")) == "n": exit()
     os.system(command)
 
 
