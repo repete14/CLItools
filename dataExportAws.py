@@ -1,7 +1,7 @@
 # script created to complete data export for data dump
 # Created by Peter Olson
-# Version: 0.1.0
-# 11/14/18
+# Version: 1.0.0
+# 11/26/18
 
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
@@ -16,16 +16,9 @@ def data_export():
     namespace_name = input("Namespace (i.e. jcx-inst-4lwsszavbrnnszco5xtghv): ")
     tenant_id = input("Tenant ID (i.e. 27a58e58-b47b-49ff-bd90-8e8040a24212): ")
     region = input("Context (eu or us): ")
-    username = input("Enter your username on sftp server (ldap, i.e. polson):")
+    username = input("Enter your personal username on sftp server (ldap, i.e. polson): ")
 
     # cascade some data based on input
-    if installation_name == "test":
-        namespace_name = "jcx-inst-rd19ys5fnopufncxqvxwqg"
-        tenant_id = "062a3052-5398-4b86-a302-3fd28e68be30"
-        region = "us"
-        installation_name = "jivesoftware-hopstest-peter-aws28"
-        username = "polson"
-
     if region == "eu":
         context = "jcx-prod-eu"
         bastion_host = "bastion-eu-central-1-jive-microservices-prod.infra.jivehosted.com"
@@ -63,8 +56,8 @@ def data_export():
     if customer_sftp_account == "y":
         customer_sftp_account = input("Enter account name: ")
     else:
-        command = binstore_prefix_su + "/sftp/bin/create_binstore_sftp_user.sh"
-        output = str(subprocess.check_output(binstore_prefix + command + command_suffix, shell=True).decode('utf-8')).strip()
+        command = binstore_prefix_su + "/sftp/bin/create_binstore_sftp_user.sh" + command_suffix
+        os.system(command)
         customer_sftp_account = installation_name
 
     # setting up some base file settings
@@ -75,7 +68,7 @@ def data_export():
     binstore_temp_dir = binstore_user_dir + customer_sftp_account + "/"
     binstore_customer_dir = "/sftp/jail/" + customer_sftp_account + "/storage/"
 
-    print("----- creating Db dump on bastion host -----")
+    print("\n----- getting db details -----")
     print("routing through pod: " + pod_name)
     # get database details
     command = "cd /secrets/jive/db/app/;cat password"
@@ -87,49 +80,59 @@ def data_export():
     command = "cd /secrets/jive/db/app/;cat host"
     db_host = str(subprocess.check_output(exec_prefix + command + command_suffix, shell=True).decode('utf-8')).strip()
 
-    command = "pg_dump -v -Fc -O -U " + db_name + " -h " + db_host + " -f " + db_dump_filename + " " + db_name
-    print("use the following to log in: " + db_pass)
-
     # SSH to bastion, and create a .dmp file in user's home directory
-    command = bastion_prefix + command + command_suffix
+    print("\n----- creating Db dump on bastion host -----")
+    print("use the following to log into the db: " + db_pass)
+    command = bastion_prefix + "pg_dump -v -Fc -O -U " + db_name + " -h " + db_host + " -f " + db_dump_filename + " " + db_name + command_suffix
     os.system(command)
     print("creation of " + db_dump_filename + " on " + bastion_host + ":" + bastion_home_dir)
 
     # move files from bastion to user's sftp home directory
-    print("----- Moving Db dump to sftp server -----")
-    source_file = bastion_host + bastion_home_dir + ":" + db_dump_filename
+    print("\n----- Moving Db dump to sftp server -----")
+    source_file = bastion_host + ":" + bastion_home_dir + db_dump_filename
     destination_file = binstore_user_dir + db_dump_filename
     command = binstore_prefix + "scp " + username + "@" + source_file + " " + destination_file + command_suffix
     os.system(command)
 
     # move dbDump from sftp home to sftp customer directory
+    print("\n----- Moving Db dump to customer sftp directory -----")
     source_file = binstore_user_dir + db_dump_filename
     destination_file = binstore_customer_dir + db_dump_filename
     command = binstore_prefix_su + "mv " + source_file + " " + destination_file + command_suffix
     os.system(command)
 
     # create binstore dump
-    print("----- creating binstore dump -----")
+    print("\n----- creating binstore dump -----")
     print("Make sure you have your aws CLI tools set up according to https://aurea.jiveon.com/docs/DOC-194116")
     command = binstore_prefix + "mkdir " + binstore_temp_dir + command_suffix
     os.system(command)
     command = binstore_prefix + "aws --profile ms-prod s3 cp s3://" + baas_broker + "/" + tenant_id + "/jiveSBS/ " + binstore_temp_dir + " --recursive" + command_suffix
     os.system(command)
+    print("\n----- compressing binstore dump files -----")
     command = binstore_prefix_su + "tar -czvf " + binstore_user_dir + binstore_dump_filename + " " + binstore_temp_dir + "*" + command_suffix
     os.system(command)
     source_file = binstore_user_dir + binstore_dump_filename
     destination_file = binstore_customer_dir + binstore_dump_filename
+    print("\n----- Moving binstore dump to customer sftp directory -----")
     command = binstore_prefix_su + "mv " + source_file + " " + destination_file + command_suffix
     os.system(command)
 
+    # setting customer ownership of sftp files
+    print("\n----- setting file ownership permissions -----")
+    command = binstore_prefix_su + "chown -R " + customer_sftp_account + ":jivesftp " + binstore_customer_dir + command_suffix
+    os.system(command)
+
     # cleaning up leftover files
-    print("----- cleaning up leftover files and folders -----")
+    print("\n----- cleaning up leftover files and folders -----")
     command = binstore_prefix + "rm -rf " + binstore_temp_dir + command_suffix
     os.system(command)
     command = bastion_prefix + "rm " + bastion_home_dir + db_dump_filename + command_suffix
     os.system(command)
 
-    print("----- PROCESS COMPLETE! -----")
+    print("\n----- PROCESS COMPLETE! -----")
+    print("Files located at " + binstore_host + binstore_customer_dir + ":")
+    command = binstore_prefix_su + "ls -larth " + binstore_customer_dir + command_suffix
+    os.system(command)
 
 
 data_export()
