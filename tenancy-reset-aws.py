@@ -13,12 +13,13 @@ import requests
 
 def tenancy_reset():
     # get input data to perform operation
-    namespace_name = input("Namespace (i.e. jcx-inst-rd19ys5fnopufncxqvxwqg): ")
-    tenant_id = input("Tenant ID (i.e. 062a3052-5398-4b86-a302-3fd28e68be30): ")
+    namespace_name = input("Namespace (i.e. jcx-inst-4lwsszavbrnnszco5xtghv): ")
+    tenant_id = input("Tenant ID (i.e. 27a58e58-b47b-49ff-bd90-8e8040a24212): ")
     region = input("Context (eu or us): ")
 
     if namespace_name == "test":
-        namespace_name = "jcx-inst-rd19ys5fnopufncxqvxwqg"
+        namespace_name = "jcx-inst-4lwsszavbrnnszco5xtghv"
+        tenant_id = "27a58e58-b47b-49ff-bd90-8e8040a24212"
         region = "us"
 
     # performing tenancy purge
@@ -67,13 +68,11 @@ def tenancy_reset():
 
     # log into sql, in order to run delete command
     print("")
-    print("----------use the following to log in: ")
-    print(db_pass)
     print("\n----------use the following command to finish reset: ")
     print("DELETE FROM jiveProperty where name like 'services.secret.%';")
     print("\n----------exit psql with '\q' when complete, and move on to the next steps")
     print("")
-    exec_command = ("psql --host " + db_host + " --port=" + db_port + " --username=" + db_username + " --dbname=" + db_name)
+    exec_command = ("export PGPASSWORD=" + db_pass + "; psql --host " + db_host + " --port=" + db_port + " --username=" + db_username + " --dbname=" + db_name)
     os.system(exec_prefix + exec_command + exec_suffix)
 
     tenancy_secrets_purge(datacenter, tenant_id)
@@ -81,25 +80,104 @@ def tenancy_reset():
 
 def tenancy_secrets_purge(datacenter, tenant_id):
 
-    services = str("activityIngress mitui-video-playback antivirus mitui-videos baas-s3-broker mitui-videos-aws "
-                   "cloudnotification office365 content-translation phrase-substitution contentTranslation "
-                   "realtime-discovery core-phrasesubstitution rebuildSearchIndex core-translation recoactivity "
-                   "csm-aws recoactivity-aws dealroom recofollows digestrecommender recofollows-aws "
-                   "digestrecommender-aws recommendations directory recommendations-aws gala-app-service reconotify "
-                   "identity reconotify-aws if-crm-sfdc recorealtime jive-auth-cloud-analytics-aws recorealtime-aws "
-                   "jive-cloud-analytics rewards jive-cloud-analytics-aws rewards-recognition "
-                   "jive-cmr-cloud-analytics search jive-id-auth search.moreLikeThis jive-id-batphone search.query "
-                   "jive-id-profile searchIndexManage jive-id-public spam-prevention jive-id-ui spamprevention "
-                   "jive-im-cloud-analytics streamonce jive-im-cloud-analytics-aws unified-admin-aws jivewadmin "
-                   "vid-authorization-perceptive mitui-cloudalytics vid-delete-perceptive mitui-cloudalytics-aws "
-                   "vid-download-perceptive mitui-cloudalytics-export vid-embed mitui-cloudalytics-insights "
-                   "vid-registration-perceptive mitui-cloudalytics-insights-aws vid-status-perceptive mitui-comments "
-                   "vid-upload-perceptive mitui-people video-authorization-perceptive mitui-people-aws "
-                   "video-authorize-perceptive mitui-phrases video-delete-perceptive mitui-phrases-aws "
-                   "video-download-perceptive mitui-places video-embed mitui-places-aws video-regauth-perceptive "
-                   "mitui-profile video-register-perceptive mitui-profile-aws video-registration-perceptive "
-                   "mitui-userpanel video-status-perceptive mitui-userpanel-aws video-upload-perceptive "
-                   "mitui-video-browse zenx mitui-video-create").split(" ")
+    services = [
+        'activityIngress',
+        'antivirus',
+        'api-gateway',
+        'baas-s3-broker',
+        'cloudnotification',
+        'content-translation',
+        'contentTranslation',
+        'core-phrasesubstitution',
+        'core-translation',
+        'csm-aws',
+        'dealroom',
+        'digestrecommender',
+        'digestrecommender-aws',
+        'directory',
+        'gala-app-service',
+        'identity',
+        'if-crm-sfdc',
+        'jive-auth-cloud-analytics-aws',
+        'jive-cloud-analytics',
+        'jive-cloud-analytics-aws',
+        'jive-cmr-cloud-analytics',
+        'jive-id-auth',
+        'jive-id-batphone',
+        'jive-id-profile',
+        'jive-id-public',
+        'jive-id-ui',
+        'jive-im-cloud-analytics',
+        'jive-im-cloud-analytics-aws',
+        'jivewadmin',
+        'mitui-cloudalytics',
+        'mitui-cloudalytics-aws',
+        'mitui-cloudalytics-export',
+        'mitui-cloudalytics-insights',
+        'mitui-cloudalytics-insights-aws',
+        'mitui-comments',
+        'mitui-people',
+        'mitui-people-aws',
+        'mitui-phrases',
+        'mitui-phrases-aws',
+        'mitui-places',
+        'mitui-places-aws',
+        'mitui-profile',
+        'mitui-profile-aws',
+        'mitui-userpanel',
+        'mitui-userpanel-aws',
+        'mitui-video-browse',
+        'mitui-video-create',
+        'mitui-video-playback',
+        'mitui-videos',
+        'mitui-videos-aws',
+        'mobile-push-notification',
+        'office365',
+        'phrase-substitution',
+        'realtime-discovery',
+        'rebuildSearchIndex',
+        'recoactivity',
+        'recoactivity-aws',
+        'recofollows',
+        'recofollows-aws',
+        'recommendations',
+        'recommendations-aws',
+        'reconotify',
+        'reconotify-aws',
+        'recorealtime',
+        'recorealtime-aws',
+        'rewards',
+        'rewards-recognition',
+        'search',
+        'search.moreLikeThis',
+        'search.query',
+        'searchIndexManage',
+        'security-notification',
+        'spam-prevention',
+        'spamprevention',
+        'streamonce',
+        'unified-admin-aws',
+        'urgent-notifications',
+        'vid-authorization-perceptive',
+        'vid-delete-perceptive',
+        'vid-download-perceptive',
+        'vid-embed',
+        'vid-registration-perceptive',
+        'vid-status-perceptive',
+        'vid-upload-perceptive',
+        'video-authorization-perceptive',
+        'video-authorize-perceptive',
+        'video-delete-perceptive',
+        'video-download-perceptive',
+        'video-embed',
+        'video-regauth-perceptive',
+        'video-register-perceptive',
+        'video-registration-perceptive',
+        'video-status-perceptive',
+        'video-upload-perceptive',
+        'zenx',
+    ]
+
     for service in services:
         for i in ("1","2","3"):
 

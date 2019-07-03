@@ -20,9 +20,8 @@ Tool for performing a full tenancy reset on an AWS site; including clearing secr
     1) JCX URI/namespace
     2) TenantID/Jive instance ID
     3) The region (either 'us' or 'eu')
-3) Details for the login credentials, and command to be used will be printed out. 
-    1) Enter the password when prompted
-    2) Then when at the psql prompt, enter the command given
+3) Details for the command to be used will be printed out. 
+    2) At the psql prompt, enter the command given
     3) Enter "\q" to quit psql prompt, and continue
 4) Script will proceed to purging of tenancy data from host, monitor for success.
 5) Done!
@@ -48,13 +47,52 @@ Tool for dumping customer database and binstore data onto sftp server from an AW
     3) TenantID/Jive instance ID
     4) The region (either 'us' or 'eu')
     5) Your personal username on sftp server (usually ldap)
-3) Details for the PSQL db login credentials will be printed out. 
-    1) Enter the password when prompted
-4) You will be asked if the customer's SFTP account has already been created
+3) You will be asked if the customer's SFTP account has already been created
     1) If so type 'y', and When prompted enter the name for the already generated customer account 
     2) If not, type 'n', and enter the name of the account to be created (usually the customer or instance name)
-5) Follow along with the output as the files are generated, packaged, and moved to the customer's sftp folders
+4) Follow along with the output as the files are generated, packaged, and moved to the customer's sftp folders
 5) Done!
+
+## AWS Pod Monitor: 
+###### pod_monitor.py
+Tool for monitoring the current status of pods as they start up
+
+##### Prerequisites:
+1) Python, with the following packages:
+    1) kubernetes
+    2) pytz
+4) properly configured kubectl setup with access to run commands on pods
+5) Tested with mac using python 2. Could need updating to use on other systems.
+
+##### To use:
+1) Run with "python [path to file]\pod_monitor.py
+2) Script will run and show all webapp pods in which the status of the webapp container is in a not ready state (analogous to ready state 1/2)
+    1) the top section will show pods that are older than 10 minutes, but younger than 12 hours, i.e. those most likely to need to be stuck and need to be killed
+    2) the second section will show all pods that are younger than 10 minutes, i.e. still in the process of starting up
+    3) the bottom section will show all pods that are older than 12 hours, most likely part of a dead installation or otherwise can be ignored.
+4) The first column shows the namespace of the pods, the second column shows the pod name, and the third is the age of the pod
+5) Page will repeat until closed, refreshing every 8 seconds or so, depending on speed of operation.
+
+## AWS Pod Killer: 
+###### pod_killer.py
+Tool to aid killing of stuck pods
+
+##### Prerequisites:
+1) Python 2, with the following packages:
+    1) kubernetes
+    2) pytz
+4) properly configured kubectl setup with access to run commands on pods
+5) Tested with mac using python 2. Could need updating to use on other systems.
+
+##### To use:
+1) Run with "python [path to file]\pod_killer.py
+2) Script will run and show all non functioning webapp pods in a manner identical to the above (pod_watch.py) 
+4) The script will then ask for your next action, which can be one of the following:
+    1) 'r' will recheck all pods, and update the display/numbering
+    2) 'a' will delete all pods listed in the above display
+    3) entering any number, or series of numbers (comma separated), will delete those numbered webapps
+    4) 'q' will quit the script 
+5) Page will report pods deleted, as well as a count of how many pods have been deleted for all namespaces by you so far.
 
 ## AWS Database Login: 
 ###### dbLoginAws.py
@@ -73,10 +111,8 @@ script used to simplify the process of logging into an aws site's db, by just en
 2) When prompted, enter the following:
     1) JCX URI/namespace 
     2) The region (either 'us' or 'eu')
-3) Details for the login credentials, and command to be used will be printed out. 
-    1) Enter the password when prompted
-    2) Perform whatever tasks you intend, while in the psql prompt
-    3) Enter "\q" to quit psql prompt, and continue
+3) Perform whatever tasks you intend, while in the psql prompt
+4) Enter "\q" to quit psql prompt, and continue
     
 ## AWS log gathering script: 
 ###### logGathererAWS.py

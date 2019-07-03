@@ -61,8 +61,7 @@ def awsDbLogin():
     db_host = str(subprocess.check_output(exec_prefix + exec_command + exec_suffix, shell=True).decode('utf-8')).strip()
 
     # log into sql, in order to run delete command
-    print("use the following to log in: " + db_pass)
-    exec_command = ("psql --host " + db_host + " --port=" + db_port + " --username=" + db_username + " --dbname=" + db_name)
+    exec_command = ("export PGPASSWORD=" + db_pass + "; psql --host " + db_host + " --port=" + db_port + " --username=" + db_username + " --dbname=" + db_name)
     os.system(exec_prefix + exec_command + exec_suffix)
 
 

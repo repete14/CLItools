@@ -84,12 +84,12 @@ def collect_logs():
         now = datetime.datetime.now()
         archive_name = installation_name + "_logs_" + pod_name + "_" + str(now.month) + "-" + str(now.day) + "-" + str(
             now.year) + ".tar.gz"
-        exec_command = "tar -czf /var/log/jive/" + archive_name + " /var/log/jive/"
+        exec_command = "tar -czf " + archive_name + " -C /var/log jive"
         os.system(exec_prefix + exec_command + exec_suffix)
 
         # download log gz file to local machine where specified earlier
         print("\n------------------------------   Downloading logs ------------------------------ ")
-        os.system("kubectl cp -c webapp --context=" + context + " -n " + namespace_name + " " + pod_name + ":/var/log/jive/" + archive_name + " " + download_path + archive_name)
+        os.system("kubectl cp -c webapp --context=" + context + " -n " + namespace_name + " " + pod_name + ":/usr/local/jive/" + archive_name + " " + download_path + archive_name)
 
         # delete logs and gz gathered to return to original state.
         print("\n------------------------------   Deleting logs ------------------------------ ")
@@ -102,7 +102,7 @@ def collect_logs():
         if thread:
             exec_command = "rm /var/log/jive/threaddumps.txt"
             os.system(exec_prefix + exec_command + exec_suffix)
-        exec_command = "rm /var/log/jive/" + archive_name
+        exec_command = "rm /usr/local/jive/" + archive_name
         os.system(exec_prefix + exec_command + exec_suffix)
 
         # allow for user to do process again, but with a different pod. all other information stays the same

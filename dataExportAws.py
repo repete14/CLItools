@@ -82,8 +82,8 @@ def data_export():
 
     # SSH to bastion, and create a .dmp file in user's home directory
     print("\n----- creating Db dump on bastion host -----")
-    print("use the following to log into the db: " + db_pass)
-    command = bastion_prefix + "pg_dump -v -Fc -O -U " + db_name + " -h " + db_host + " -f " + db_dump_filename + " " + db_name + command_suffix
+    # print("use the following to log into the db: " + db_pass)
+    command = bastion_prefix + "export PGPASSWORD=" + db_pass + ";pg_dump -v -Fc -O -U " + db_name + " -h " + db_host + " -f " + db_dump_filename + " " + db_name + command_suffix
     os.system(command)
     print("creation of " + db_dump_filename + " on " + bastion_host + ":" + bastion_home_dir)
 
@@ -91,7 +91,10 @@ def data_export():
     print("\n----- Moving Db dump to sftp server -----")
     source_file = bastion_host + ":" + bastion_home_dir + db_dump_filename
     destination_file = binstore_user_dir + db_dump_filename
-    command = binstore_prefix + "scp " + username + "@" + source_file + " " + destination_file + command_suffix
+    # command = binstore_prefix + "scp " + username + "@" + source_file + " " + destination_file + command_suffix
+    command = "scp " + username + "@" + source_file + " " + "./" + db_dump_filename
+    os.system(command)
+    command = "scp ./" + db_dump_filename + " " + username + "@" + binstore_host + ":" + destination_file
     os.system(command)
 
     # move dbDump from sftp home to sftp customer directory
@@ -106,10 +109,12 @@ def data_export():
     print("Make sure you have your aws CLI tools set up according to https://aurea.jiveon.com/docs/DOC-194116")
     command = binstore_prefix + "mkdir " + binstore_temp_dir + command_suffix
     os.system(command)
-    command = binstore_prefix + "aws --profile ms-prod s3 cp s3://" + baas_broker + "/" + tenant_id + "/jiveSBS/ " + binstore_temp_dir + " --recursive" + command_suffix
+    command = binstore_prefix + "aws --profile ms-prod s3 cp s3://" + baas_broker + "/" + tenant_id + "/jiveSBS/ " + binstore_temp_dir + " --recursive --only-show-errors" + command_suffix
     os.system(command)
     print("\n----- compressing binstore dump files -----")
-    command = binstore_prefix_su + "tar -czvf " + binstore_user_dir + binstore_dump_filename + " " + binstore_temp_dir + "*" + command_suffix
+    command = binstore_prefix_su + "find " + binstore_temp_dir + " -type f -print >/tmp/binstore_dump.manifest" + command_suffix
+    os.system(command)
+    command = binstore_prefix_su + "tar -czf " + binstore_user_dir + binstore_dump_filename + " --files-from /tmp/binstore_dump.manifest" + command_suffix
     os.system(command)
     source_file = binstore_user_dir + binstore_dump_filename
     destination_file = binstore_customer_dir + binstore_dump_filename
@@ -126,7 +131,11 @@ def data_export():
     print("\n----- cleaning up leftover files and folders -----")
     command = binstore_prefix + "rm -rf " + binstore_temp_dir + command_suffix
     os.system(command)
+    command = binstore_prefix + "rm -f /tmp/binstore_dump.manifest" + command_suffix
+    os.system(command)
     command = bastion_prefix + "rm " + bastion_home_dir + db_dump_filename + command_suffix
+    os.system(command)
+    command = "rm ./" + db_dump_filename
     os.system(command)
 
     print("\n----- PROCESS COMPLETE! -----")

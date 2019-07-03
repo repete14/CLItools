@@ -1,52 +1,71 @@
-# created by Peter Olson
-# tool to quickly monitor threads on an entire installation
-# used by calling file and passing it the name of one of it's nodes, and the number of nodes that that installation has.
+#!/usr/bin/env python3
 
 import sys, os, subprocess, time
+from colorama import Fore, Back, Style
 
-RED='\033[0;31m'
-GREEN ='\033[0;32m'
-NC='\033[0m'
 
-if len(sys.argv) == 1:
-	sys.argv.insert(1, "jivesoftware-noc-m2-t-wa01.m1phx1.jivehosted.com")
-	sys.argv.insert(2, 2)
+def check_threads():
 
-instanceExample = sys.argv[1]           #a node used to determine the ssh name for all the nodes
-nodeCount = int(sys.argv[2])            #number of nodes in the installation
-nodes = []                              #list of node names used during ssh
+    instance_example = input("Hostname of any webapp (i.e. jivesoftware-noc-m2-t-wa01.m1phx1.jivehosted.com): ")
+    node_count = input("Number of webapps: ")
+    node_count = int(node_count)
+    nodes = []
+    threads = []
+    color = []
+    timestamp = ""
+    output = "\t"
 
-# determine the text string for each of the nodes and add them to the array
-for i in range(1, nodeCount + 1):
-	target = instanceExample
+    # determine the text string for each of the nodes and add them to the array
+    for i in range(node_count):
+        target = instance_example
 
-	targetParts = target.split('wa0')                                               #splits the name into the isntallation, wa??, and hostname
+        # splits the name into the installation, wa??, and hostname
+        target_parts = target.split('wa0')
 
-	target = targetParts[0] + "wa" + str(i).zfill(2) + targetParts[1][1:]           #replaces wa?? with wa[new number of node in list]
+        # replaces wa?? with wa[new number of node in list]
+        target = target_parts[0] + "wa" + str(i + 1).zfill(2) + target_parts[1][1:]
 
-	nodes.append(target)
+        nodes.append(target)
+        threads.append(0)
+        color.append(Style.RESET_ALL)
+        output += "\twa" + str(i + 1).zfill(2)
+    print(output)
 
-# continuously iterate over the list of nodes and send bash command to ssh and print number of threads
-while True:
-	print("--------------------------")
-	command = '''ssh noc-mgmt1.phx1.jivehosted.com "cd /jmx_watch/ '''
-	for i in range(nodeCount):
-		command += '; sudo bash /jmx_watch/jmx.sh ' + nodes[i] + ' 6651'
-	command += '"'
-	os.system(command)
+    # continuously iterate over the list of nodes and send bash command to ssh and print number of threads
+    while True:
+        # collect the thread values
+        for i in range(node_count):
+            command = '''ssh noc-mgmt1.phx1.jivehosted.com "cd /jmx_watch/ '''
+            command += '; sudo bash /jmx_watch/jmx.sh ' + nodes[i] + ' 6651'
+            command += '"'
+            threads[i] = str(subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')).split()[5]
 
-		#print("piping command: " + command)
-		#pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            try:
+                number = int(threads[i])
+                if number >= 40:
+                    color[i] = Fore.RED + Back.RED + Style.BRIGHT
+                elif number >= 30:
+                    color[i] = Fore.RED
+                elif number >= 15:
+                    color[i] = Fore.YELLOW
+                elif number >= 0:
+                    color[i] = Fore.GREEN
+                else:
+                    color[i] = Back.BLUE + Style.BRIGHT
+                    threads[i] = "restrt"
+            except ValueError:
+                color[i] = Back.BLUE + Style.BRIGHT
+                threads[i] = "?"
+        timestamp = str(subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')).split()[1]
 
-		#print ("sleeping")
-		#time.sleep(2)
+        # create the output string
+        output = timestamp
+        for i in range(node_count):
+            # print("--------------------------")
+            # print("--------------------------")
+            # print('*')
+            output += "\t" + color[i] + threads[i] + Style.RESET_ALL
+        print (output)
 
-		#stdout = pipe.communicate()[0]
 
-		#output = stdout.decode("utf-8")
-		#print("output: " + output)
-
-		#result = int(output[len(output)-2:])
-		#print(nodes[i] + ": " + result)
-	print("--------------------------")
-	print('*')
+check_threads()
